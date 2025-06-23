@@ -326,7 +326,7 @@
         function initializeInbox() {
             console.log('Initializing JavaTutor Inbox...');
             
-            // Load messages from memory
+            // Load messages from localStorage
             loadMessages();
             
             // Set up event listeners
@@ -335,7 +335,26 @@
             // Update display
             updateDisplay();
             
+            // Check for new messages every 2 seconds
+            setInterval(checkForNewMessages, 2000);
+            
             console.log('Inbox initialized successfully!');
+        }
+
+        // Check for new messages from the tutoring site
+        function checkForNewMessages() {
+            try {
+                const currentData = localStorage.getItem('javaTutorInquiries');
+                const currentMessages = currentData ? JSON.parse(currentData) : [];
+                
+                if (currentMessages.length !== messages.length) {
+                    console.log('New messages detected, refreshing...');
+                    loadMessages();
+                    updateDisplay();
+                }
+            } catch (error) {
+                console.error('Error checking for new messages:', error);
+            }
         }
 
         // Set up event listeners
@@ -351,15 +370,25 @@
             sampleDataBtn.addEventListener('click', addSampleData);
         }
 
-        // Load messages from memory
+        // Load messages from localStorage
         function loadMessages() {
-            // In a real application, this would load from a database or API
-            // For now, we'll use an empty array
-            messages = [];
-            filteredMessages = [];
+            try {
+                const savedMessages = localStorage.getItem('javaTutorInquiries');
+                if (savedMessages) {
+                    messages = JSON.parse(savedMessages);
+                    console.log('Loaded messages from storage:', messages.length);
+                } else {
+                    messages = [];
+                }
+                filteredMessages = [...messages];
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                messages = [];
+                filteredMessages = [];
+            }
         }
 
-        // Add a new message (this would be called from the main website)
+        // Add a new message and save to localStorage
         function addMessage(messageData) {
             const message = {
                 id: Date.now(),
@@ -372,6 +401,15 @@
             };
             
             messages.unshift(message); // Add to beginning of array
+            
+            // Save to localStorage
+            try {
+                localStorage.setItem('javaTutorInquiries', JSON.stringify(messages));
+                console.log('Messages saved to storage');
+            } catch (error) {
+                console.error('Error saving messages:', error);
+            }
+            
             filterMessages();
             updateStats();
             
@@ -470,13 +508,22 @@
             document.getElementById('weekMessages').textContent = weekCount;
         }
 
-        // Clear all messages
+        // Clear all messages and update localStorage
         function clearAllMessages() {
             if (messages.length === 0) return;
             
             if (confirm('Are you sure you want to clear all messages? This action cannot be undone.')) {
                 messages = [];
                 filteredMessages = [];
+                
+                // Clear localStorage
+                try {
+                    localStorage.removeItem('javaTutorInquiries');
+                    console.log('Messages cleared from storage');
+                } catch (error) {
+                    console.error('Error clearing messages:', error);
+                }
+                
                 updateDisplay();
                 console.log('All messages cleared');
             }
